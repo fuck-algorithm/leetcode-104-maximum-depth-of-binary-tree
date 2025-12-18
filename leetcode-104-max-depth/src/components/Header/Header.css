@@ -1,0 +1,41 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-bottom: 1px solid #2d3748;
+}
+
+.title-link {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.title-link:hover {
+  opacity: 0.8;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffa116;
+  letter-spacing: 0.5px;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  transition: color 0.2s, transform 0.2s;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.github-link:hover {
+  color: #fff;
+  transform: scale(1.1);
+}

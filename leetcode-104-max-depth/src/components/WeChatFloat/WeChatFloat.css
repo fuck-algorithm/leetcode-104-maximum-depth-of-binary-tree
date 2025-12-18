@@ -1,0 +1,85 @@
+.wechat-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.float-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(7, 193, 96, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.float-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(7, 193, 96, 0.5);
+}
+
+.float-text {
+  font-size: 10px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.qrcode-popup {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.popup-arrow {
+  position: absolute;
+  bottom: -8px;
+  right: 24px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  transform: rotate(45deg);
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.popup-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.qrcode-image {
+  width: 180px;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+.popup-tip {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
