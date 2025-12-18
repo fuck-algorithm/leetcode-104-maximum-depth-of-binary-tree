@@ -11,6 +11,7 @@ interface ControlPanelProps {
   onPlayPause: () => void;
   onSpeedChange: (speed: number) => void;
   onStepChange: (step: number) => void;
+  onReset: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -22,7 +23,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onNext,
   onPlayPause,
   onSpeedChange,
-  onStepChange
+  onStepChange,
+  onReset
 }) => {
   // 键盘快捷键
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -41,8 +43,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         e.preventDefault();
         onPlayPause();
         break;
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        onReset();
+        break;
     }
-  }, [onPrevious, onNext, onPlayPause]);
+  }, [onPrevious, onNext, onPlayPause, onReset]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -55,6 +62,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     <div className="control-panel">
       <div className="controls-row">
         <div className="control-buttons">
+          <button 
+            className="control-btn reset-btn" 
+            onClick={onReset}
+            disabled={currentStep === 0 && !isPlaying}
+            title="重置 (R)"
+          >
+            <span className="btn-icon">⟲</span>
+            <span className="btn-text">重置</span>
+            <span className="shortcut">R</span>
+          </button>
+          
           <button 
             className="control-btn" 
             onClick={onPrevious}

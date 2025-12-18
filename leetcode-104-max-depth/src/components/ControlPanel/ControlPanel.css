@@ -50,6 +50,16 @@
   border-color: #2ea043;
 }
 
+.control-btn.reset-btn {
+  background: #6e40c9;
+  border-color: #6e40c9;
+}
+
+.control-btn.reset-btn:hover:not(:disabled) {
+  background: #8957e5;
+  border-color: #8957e5;
+}
+
 .btn-icon {
   font-size: 14px;
 }

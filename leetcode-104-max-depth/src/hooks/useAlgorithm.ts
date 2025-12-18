@@ -81,6 +81,11 @@ export function useAlgorithm(initialData: (number | null)[]) {
     setCurrentStep(step);
   }, []);
 
+  const handleReset = useCallback(() => {
+    setIsPlaying(false);
+    setCurrentStep(0);
+  }, []);
+
   return {
     root,
     steps,
@@ -93,6 +98,7 @@ export function useAlgorithm(initialData: (number | null)[]) {
     handleNext,
     handlePlayPause,
     handleSpeedChange,
-    handleStepChange
+    handleStepChange,
+    handleReset
   };
 }

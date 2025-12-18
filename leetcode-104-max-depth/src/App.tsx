@@ -23,7 +23,8 @@ const App: React.FC = () => {
     handleNext,
     handlePlayPause,
     handleSpeedChange,
-    handleStepChange
+    handleStepChange,
+    handleReset
   } = useAlgorithm([3, 9, 20, null, null, 15, 7]);
 
   return (
@@ -49,6 +50,7 @@ const App: React.FC = () => {
         onPlayPause={handlePlayPause}
         onSpeedChange={handleSpeedChange}
         onStepChange={handleStepChange}
+        onReset={handleReset}
       />
 
       <WeChatFloat />

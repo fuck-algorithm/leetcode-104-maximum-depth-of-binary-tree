@@ -1,4 +1,4 @@
-import type { TreeNode, AlgorithmStep, CallStackFrame } from '../types';
+import type { TreeNode, AlgorithmStep, CallStackFrame, NodeReturnInfo, EdgeLabel, NodeAnnotation } from '../types';
 
 // 从数组构建二叉树
 export function buildTreeFromArray(arr: (number | null)[]): TreeNode | null {
@@ -93,19 +93,46 @@ export function generateRandomTree(nodeCount: number = 7): (number | null)[] {
   
   let nodesInLevel = 1;
   let addedNodes = 1;
+  let currentDepth = 0;
   
   while (addedNodes < maxNodes) {
     const nextLevelNodes = nodesInLevel * 2;
+    currentDepth++;
+    
+    // 根据深度调整生成概率，浅层更倾向于生成节点（更稠密）
+    // 深度0-1: 95%概率生成节点
+    // 深度2: 85%概率生成节点
+    // 深度3+: 75%概率生成节点
+    let generateProbability: number;
+    if (currentDepth <= 1) {
+      generateProbability = 0.95;
+    } else if (currentDepth === 2) {
+      generateProbability = 0.85;
+    } else {
+      generateProbability = 0.75;
+    }
+    
+    let actualNodesInLevel = 0;
     for (let i = 0; i < nextLevelNodes && addedNodes < maxNodes; i++) {
-      // 随机决定是否添加节点
-      if (Math.random() > 0.3) {
+      // 检查父节点是否存在
+      const parentIndex = Math.floor((result.length) / 2);
+      const parentExists = parentIndex < result.length && result[parentIndex] !== null;
+      
+      if (parentExists && Math.random() < generateProbability) {
         result.push(Math.floor(Math.random() * 201) - 100);
         addedNodes++;
+        actualNodesInLevel++;
+      } else if (parentExists) {
+        result.push(null);
       } else {
         result.push(null);
       }
     }
-    nodesInLevel = nextLevelNodes;
+    
+    nodesInLevel = actualNodesInLevel > 0 ? nextLevelNodes : 0;
+    
+    // 如果这一层没有生成任何节点，停止
+    if (actualNodesInLevel === 0) break;
   }
   
   // 移除末尾的null
@@ -121,6 +148,9 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
   const steps: AlgorithmStep[] = [];
   let stepNumber = 0;
   
+  // 用于跟踪节点返回值
+  const nodeReturns = new Map<number, NodeReturnInfo>();
+  
   // 初始步骤
   steps.push({
     stepNumber: stepNumber++,
@@ -131,7 +161,9 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
     currentDepth: 0,
     maxDepth: 0,
     callStack: [],
-    visitedNodes: []
+    visitedNodes: [],
+    nodeReturns: new Map(nodeReturns),
+    edgeLabels: []
   });
 
   if (root === null) {
@@ -144,15 +176,29 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       currentDepth: 0,
       maxDepth: 0,
       callStack: [],
-      visitedNodes: []
+      visitedNodes: [],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: []
     });
     return steps;
   }
 
   const visitedNodes: number[] = [];
   
-  function dfs(node: TreeNode | null, depth: number, callStack: CallStackFrame[]): number {
+  function dfs(node: TreeNode | null, depth: number, callStack: CallStackFrame[], parentVal: number | null, isLeft: boolean | null): number {
+    const edgeLabels: EdgeLabel[] = [];
+    
     if (node === null) {
+      // 添加返回边标签
+      if (parentVal !== null) {
+        edgeLabels.push({
+          fromVal: parentVal,
+          toVal: null,
+          label: '返回 0',
+          type: 'return'
+        });
+      }
+      
       steps.push({
         stepNumber: stepNumber++,
         description: `节点为空，返回深度 0`,
@@ -162,13 +208,34 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
         currentDepth: depth,
         maxDepth: Math.max(...steps.map(s => s.maxDepth), 0),
         callStack: [...callStack],
-        visitedNodes: [...visitedNodes]
+        visitedNodes: [...visitedNodes],
+        nodeReturns: new Map(nodeReturns),
+        edgeLabels
       });
       return 0;
     }
 
     visitedNodes.push(node.val);
     const newCallStack = [...callStack, { nodeVal: node.val, depth }];
+    
+    // 初始化节点返回信息
+    nodeReturns.set(node.val, {
+      nodeVal: node.val,
+      leftDepth: null,
+      rightDepth: null,
+      returnValue: null,
+      isComparing: false
+    });
+
+    // 添加调用边标签
+    if (parentVal !== null) {
+      edgeLabels.push({
+        fromVal: parentVal,
+        toVal: node.val,
+        label: `调用 maxDepth(${node.val})`,
+        type: 'call'
+      });
+    }
 
     steps.push({
       stepNumber: stepNumber++,
@@ -182,40 +249,72 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       currentDepth: depth + 1,
       maxDepth: Math.max(...steps.map(s => s.maxDepth), depth + 1),
       callStack: newCallStack,
-      visitedNodes: [...visitedNodes]
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels
     });
 
     // 递归左子树
+    const leftCallLabel: EdgeLabel[] = node.left ? [{
+      fromVal: node.val,
+      toVal: node.left.val,
+      label: `调用左子树`,
+      type: 'call'
+    }] : [];
+    
     steps.push({
       stepNumber: stepNumber++,
-      description: `递归计算左子树深度`,
+      description: `递归计算节点 ${node.val} 的左子树深度`,
       highlightLine: 4,
       variables: [{ name: 'leftDepth', value: '计算中...', line: 4 }],
       currentNode: node,
       currentDepth: depth + 1,
       maxDepth: Math.max(...steps.map(s => s.maxDepth), depth + 1),
       callStack: newCallStack,
-      visitedNodes: [...visitedNodes]
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: leftCallLabel
     });
 
-    const leftDepth = dfs(node.left, depth + 1, newCallStack);
+    const leftDepth = dfs(node.left, depth + 1, newCallStack, node.val, true);
+    
+    // 更新节点返回信息
+    const nodeInfo = nodeReturns.get(node.val)!;
+    nodeInfo.leftDepth = leftDepth;
+    nodeReturns.set(node.val, nodeInfo);
+
+    const leftReturnLabel: EdgeLabel[] = [{
+      fromVal: node.val,
+      toVal: node.left?.val ?? null,
+      label: `左子树返回 ${leftDepth}`,
+      type: 'return'
+    }];
 
     steps.push({
       stepNumber: stepNumber++,
-      description: `左子树深度计算完成: ${leftDepth}`,
+      description: `节点 ${node.val} 的左子树深度计算完成: ${leftDepth}`,
       highlightLine: 4,
       variables: [{ name: 'leftDepth', value: String(leftDepth), line: 4 }],
       currentNode: node,
       currentDepth: depth + 1,
       maxDepth: Math.max(...steps.map(s => s.maxDepth), depth + 1),
       callStack: newCallStack,
-      visitedNodes: [...visitedNodes]
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: leftReturnLabel
     });
 
     // 递归右子树
+    const rightCallLabel: EdgeLabel[] = node.right ? [{
+      fromVal: node.val,
+      toVal: node.right.val,
+      label: `调用右子树`,
+      type: 'call'
+    }] : [];
+    
     steps.push({
       stepNumber: stepNumber++,
-      description: `递归计算右子树深度`,
+      description: `递归计算节点 ${node.val} 的右子树深度`,
       highlightLine: 5,
       variables: [
         { name: 'leftDepth', value: String(leftDepth), line: 4 },
@@ -225,14 +324,27 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       currentDepth: depth + 1,
       maxDepth: Math.max(...steps.map(s => s.maxDepth), depth + 1),
       callStack: newCallStack,
-      visitedNodes: [...visitedNodes]
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: rightCallLabel
     });
 
-    const rightDepth = dfs(node.right, depth + 1, newCallStack);
+    const rightDepth = dfs(node.right, depth + 1, newCallStack, node.val, false);
+    
+    // 更新节点返回信息
+    nodeInfo.rightDepth = rightDepth;
+    nodeReturns.set(node.val, nodeInfo);
+
+    const rightReturnLabel: EdgeLabel[] = [{
+      fromVal: node.val,
+      toVal: node.right?.val ?? null,
+      label: `右子树返回 ${rightDepth}`,
+      type: 'return'
+    }];
 
     steps.push({
       stepNumber: stepNumber++,
-      description: `右子树深度计算完成: ${rightDepth}`,
+      description: `节点 ${node.val} 的右子树深度计算完成: ${rightDepth}`,
       highlightLine: 5,
       variables: [
         { name: 'leftDepth', value: String(leftDepth), line: 4 },
@@ -242,14 +354,53 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       currentDepth: depth + 1,
       maxDepth: Math.max(...steps.map(s => s.maxDepth), depth + 1),
       callStack: newCallStack,
-      visitedNodes: [...visitedNodes]
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: rightReturnLabel
     });
 
+    // 比较左右子树深度
+    nodeInfo.isComparing = true;
+    nodeReturns.set(node.val, nodeInfo);
+    
     const maxD = Math.max(leftDepth, rightDepth) + 1;
+    const comparison = leftDepth >= rightDepth ? 
+      `左(${leftDepth}) ≥ 右(${rightDepth})` : 
+      `右(${rightDepth}) > 左(${leftDepth})`;
 
     steps.push({
       stepNumber: stepNumber++,
-      description: `返回 max(${leftDepth}, ${rightDepth}) + 1 = ${maxD}`,
+      description: `比较: ${comparison}，取最大值 ${Math.max(leftDepth, rightDepth)} + 1 = ${maxD}`,
+      highlightLine: 6,
+      variables: [
+        { name: 'leftDepth', value: String(leftDepth), line: 4 },
+        { name: 'rightDepth', value: String(rightDepth), line: 5 },
+        { name: 'max', value: String(Math.max(leftDepth, rightDepth)), line: 6 }
+      ],
+      currentNode: node,
+      currentDepth: depth + 1,
+      maxDepth: Math.max(...steps.map(s => s.maxDepth), maxD),
+      callStack: newCallStack,
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: []
+    });
+
+    // 更新返回值
+    nodeInfo.returnValue = maxD;
+    nodeInfo.isComparing = false;
+    nodeReturns.set(node.val, nodeInfo);
+
+    const returnLabel: EdgeLabel[] = parentVal !== null ? [{
+      fromVal: parentVal,
+      toVal: node.val,
+      label: `返回 ${maxD}`,
+      type: 'return'
+    }] : [];
+
+    steps.push({
+      stepNumber: stepNumber++,
+      description: `节点 ${node.val} 返回深度 ${maxD}`,
       highlightLine: 6,
       variables: [
         { name: 'leftDepth', value: String(leftDepth), line: 4 },
@@ -260,13 +411,15 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       currentDepth: depth + 1,
       maxDepth: Math.max(...steps.map(s => s.maxDepth), maxD),
       callStack: newCallStack,
-      visitedNodes: [...visitedNodes]
+      visitedNodes: [...visitedNodes],
+      nodeReturns: new Map(nodeReturns),
+      edgeLabels: returnLabel
     });
 
     return maxD;
   }
 
-  const finalDepth = dfs(root, 0, []);
+  const finalDepth = dfs(root, 0, [], null, null);
 
   steps.push({
     stepNumber: stepNumber++,
@@ -277,7 +430,9 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
     currentDepth: 0,
     maxDepth: finalDepth,
     callStack: [],
-    visitedNodes: [...visitedNodes]
+    visitedNodes: [...visitedNodes],
+    nodeReturns: new Map(nodeReturns),
+    edgeLabels: []
   });
 
   return steps;

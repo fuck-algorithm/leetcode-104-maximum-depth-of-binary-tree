@@ -5,4 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/leetcode-104-maximum-depth-of-binary-tree/',
+  server: {
+    port: 62588,
+  },
 })
