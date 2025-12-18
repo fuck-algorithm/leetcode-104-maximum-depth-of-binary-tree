@@ -452,11 +452,12 @@ export function getTreeLayout(root: TreeNode | null, width: number, height: numb
   const positions: NodePosition[] = [];
   const levelHeight = height / 5;
   
+  // 第一遍：使用相对坐标计算布局
   function traverse(node: TreeNode | null, depth: number, left: number, right: number) {
     if (!node) return;
     
     const x = (left + right) / 2;
-    const y = depth * levelHeight + 40;
+    const y = depth * levelHeight + 63;
     
     positions.push({ node, x, y, depth });
     
@@ -466,5 +467,19 @@ export function getTreeLayout(root: TreeNode | null, width: number, height: numb
   }
   
   traverse(root, 0, 0, width);
+  
+  // 第二遍：计算实际边界并居中
+  if (positions.length > 0) {
+    const minX = Math.min(...positions.map(p => p.x));
+    const maxX = Math.max(...positions.map(p => p.x));
+    const treeWidth = maxX - minX;
+    const offsetX = (width - treeWidth) / 2 - minX;
+    
+    // 应用偏移使树居中
+    positions.forEach(p => {
+      p.x += offsetX;
+    });
+  }
+  
   return positions;
 }
