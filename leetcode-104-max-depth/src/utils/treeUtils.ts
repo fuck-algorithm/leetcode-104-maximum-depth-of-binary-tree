@@ -1,4 +1,4 @@
-import type { TreeNode, AlgorithmStep, CallStackFrame, NodeReturnInfo, EdgeLabel, NodeAnnotation } from '../types';
+import type { TreeNode, AlgorithmStep, CallStackFrame, NodeReturnInfo, EdgeLabel } from '../types';
 
 // 从数组构建二叉树
 export function buildTreeFromArray(arr: (number | null)[]): TreeNode | null {
@@ -185,7 +185,7 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
 
   const visitedNodes: number[] = [];
   
-  function dfs(node: TreeNode | null, depth: number, callStack: CallStackFrame[], parentVal: number | null, isLeft: boolean | null): number {
+  function dfs(node: TreeNode | null, depth: number, callStack: CallStackFrame[], parentVal: number | null): number {
     const edgeLabels: EdgeLabel[] = [];
     
     if (node === null) {
@@ -276,7 +276,7 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       edgeLabels: leftCallLabel
     });
 
-    const leftDepth = dfs(node.left, depth + 1, newCallStack, node.val, true);
+    const leftDepth = dfs(node.left, depth + 1, newCallStack, node.val);
     
     // 更新节点返回信息
     const nodeInfo = nodeReturns.get(node.val)!;
@@ -329,7 +329,7 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
       edgeLabels: rightCallLabel
     });
 
-    const rightDepth = dfs(node.right, depth + 1, newCallStack, node.val, false);
+    const rightDepth = dfs(node.right, depth + 1, newCallStack, node.val);
     
     // 更新节点返回信息
     nodeInfo.rightDepth = rightDepth;
@@ -419,7 +419,7 @@ export function generateAlgorithmSteps(root: TreeNode | null): AlgorithmStep[] {
     return maxD;
   }
 
-  const finalDepth = dfs(root, 0, [], null, null);
+  const finalDepth = dfs(root, 0, [], null);
 
   steps.push({
     stepNumber: stepNumber++,
